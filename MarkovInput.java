@@ -10,6 +10,10 @@ public class MarkovInput{
         this.base = base;
         this.given = given;
         this.value = value;
+    }
+    public MarkovInput(MarkovState base, double value){
+        this.base = base;
+        this.value = value;
     }    
     public MarkovState getBase(){
         return this.base;
@@ -21,7 +25,8 @@ public class MarkovInput{
         return this.value;
     }
     public void printInput(){
-        System.out.println(this.base.getVariable() + "|" + this.given.getVariable() + " = " + this.value);
+        if(this.given != null) System.out.println(this.base.getVariable() + this.base.getSubscript()+ "|" + this.given.getVariable() + this.given.getSubscript() + " = " + this.value);
+        else System.out.println(this.base.getVariable() + this.base.getSubscript() + " = " + this.value);
     }
 
 }

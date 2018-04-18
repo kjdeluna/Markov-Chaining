@@ -36,7 +36,7 @@ public class Markov{
         }
         return count;
     }
-    public int computeDenominator(String sequnece, String given){
+    public int computeDenominator(String sequence, String given){
         char[] chars = sequence.toCharArray();
         char a = given.toCharArray()[0];
         int count = 0;
@@ -47,11 +47,23 @@ public class Markov{
         return count;
     }
     public void computeTransitionProbabilities(){
+        char[] chars = this.sequence.toCharArray();
+        for(String str  : states){
+            char a = str.toCharArray()[0];
+            if(a == chars[0]) this.probabilityMap.put(str + "0", new MarkovInput(new MarkovState(str, 0), 1));
+            else this.probabilityMap.put(str + "0", new MarkovInput(new MarkovState(str, 0), 0));
+        }
+        double result = 0;
         for(String base : this.states){
             for(String given : this.states){
                 System.out.print(base+given+" ");
-                System.out.println(computeNumerator(this.sequence,given+base) + " " + computeDenominator(this.sequence, given));
+                result = ((double) (computeNumerator(this.sequence, given+base))) / computeDenominator(this.sequence,given);
+                this.probabilityMap.put(base+"|"+given, new MarkovInput(new MarkovState(base, -1), new MarkovState(given, -1), result));
+    
             }
+            // for(String key : probabilityMap.keySet()){
+            //     probabilityMap.get(key).printInput();
+            // }
         }
     }
     private boolean containsState(String var){
@@ -68,6 +80,38 @@ public class Markov{
         }
         return false;
     }
+    private double computeStateProbability(MarkovState ms){
+        double result = 0;
+        if(this.probabilityMap.containsKey(ms.getVariable() + ms.getSubscript())){
+            return this.probabilityMap.get(ms.getVariable() + ms.getSubscript()).getValue();
+        }
+        if(this.containsState(ms.getVariable())){
+            // Means that this is a transition state
+            for(String str : states){
+                result += (this.probabilityMap.get(ms.getVariable() + "|" + str).getValue() * computeStateProbability(new MarkovState(str, ms.getSubscript() - 1)));
+            }
+        } else if(this.containsMeasurableState(ms.getVariable())){
+            // This is a measurable state
+            for(String str : states){
+                result += (this.probabilityMap.get(ms.getVariable() + "|" + str).getValue() * computeStateProbability(new MarkovState(str, ms.getSubscript())));
+            }
+        }
+        this.probabilityMap.put(ms.getVariable() + ms.getSubscript(), new MarkovInput(new MarkovState(ms.getVariable(), ms.getSubscript()), result));
+        return result;
+    }
+    private double computeBayes(MarkovInput mi){
+        double numerator = this.probabilityMap.get(mi.getGiven().getVariable() + "|" + mi.getBase().getVariable()).getValue() * computeStateProbability(new MarkovState(mi.getBase().getVariable(), mi.getBase().getSubscript()));
+        double denominator = this.computeStateProbability(new MarkovState(mi.getGiven().getVariable(), mi.getGiven().getSubscript()));
+        // double denominator = 1;
+        // System.out.println(denominator);
+        if(probabilityMap.containsKey(mi.getBase().getVariable() + mi.getBase().getSubscript())){
+            System.out.println("existing");
+        } else {
+
+        }
+        this.probabilityMap.put(mi.getBase().getVariable() + mi.getBase().getSubscript() + "|" + mi.getGiven().getVariable() + mi.getGiven().getSubscript(), new MarkovInput(new MarkovState(mi.getBase().getVariable(), mi.getBase().getSubscript()), new MarkovState(mi.getGiven().getVariable(), mi.getGiven().getSubscript()), numerator/denominator));
+        return numerator / denominator;
+    }
     private void readFile(String inputFilename){
         try{
             FileReader fr = new FileReader(inputFilename);
@@ -81,15 +125,17 @@ public class Markov{
                     this.probabilityMap.put(measurableStates[j]+"|"+states[i],new MarkovInput(new MarkovState(measurableStates[j], -1), new MarkovState(states[i], -1), Double.parseDouble(probabilities[j])));
                 }
             }
-            for(String key : probabilityMap.keySet()){
-                probabilityMap.get(key).printInput();
-            }
             this.sequence = br.readLine();
             System.out.println(sequence);
             // while((line = br.readLine()) != null){
             //     System.out.println(line);
             // }
             computeTransitionProbabilities();
+            computeBayes(new MarkovInput(new MarkovState("S", 2), new MarkovState("E", 2)));
+            for(String key : probabilityMap.keySet()){
+                probabilityMap.get(key).printInput();
+            }
+
         }
         catch(Exception e){
             e.printStackTrace();

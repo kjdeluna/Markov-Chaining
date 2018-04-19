@@ -2,6 +2,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.util.HashMap;
+import java.util.LinkedList;
 // S | S    [0]
 // S | T    [1]
 // T | T    [2]
@@ -17,6 +18,7 @@ public class Markov{
     private static String sequence;
     private static String[] states;
     private static String[] measurableStates;
+    private static MarkovInput[] inputs;
     public Markov(String inputFilename){
         this.transitionProbabilities = new MarkovInput[TRANSITIONAL_PROB_COUNT];
         this.probabilityMap = new HashMap<String, MarkovInput>();
@@ -130,8 +132,23 @@ public class Markov{
             // while((line = br.readLine()) != null){
             //     System.out.println(line);
             // }
+            int count = Integer.parseInt(br.readLine());
+            this.inputs = new MarkovInput[count];
             computeTransitionProbabilities();
-            computeBayes(new MarkovInput(new MarkovState("S", 2), new MarkovState("E", 2)));
+            int counter = 0;
+            for(int i = 0; i < count; i++){
+                line = br.readLine();
+                String[] separated = line.split(" given ");
+                LinkedList<MarkovState> collector = new LinkedList<MarkovState>();
+                for(String s : separated){
+                    collector.add(new MarkovState(Character.toString(s.charAt(0)), Integer.parseInt(s.substring(1))));
+                }
+                MarkovInput mi = new MarkovInput(collector.get(0), collector.get(1));
+                this.inputs[counter++] = mi; 
+            }
+            for(MarkovInput mi : this.inputs){
+                computeBayes(mi);
+            }
             for(String key : probabilityMap.keySet()){
                 probabilityMap.get(key).printInput();
             }

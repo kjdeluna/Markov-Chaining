@@ -4,7 +4,8 @@ import java.io.FileWriter;
 import java.util.HashMap;
 import java.util.LinkedList;
 public class Markov{
-    private HashMap<String, MarkovInput> probabilityMap;\
+    private HashMap<String, MarkovInput> probabilityMap;
+    private int k;
     private static String sequence;
     private static String[] states;
     private static String[] measurableStates;
@@ -13,7 +14,7 @@ public class Markov{
         this.probabilityMap = new HashMap<String, MarkovInput>();
         this.readFile(inputFilename);
         this.computeInputs();
-        this.printProbabilityMap();
+        // this.printProbabilityMap();
         this.writeInputs();
     }
     public int computeNumerator(String str, String findStr){
@@ -47,14 +48,21 @@ public class Markov{
         char[] chars = this.sequence.toCharArray();
         for(String str  : states){
             char a = str.toCharArray()[0];
-            if(a == chars[0]) this.probabilityMap.put(str + "0", new MarkovInput(new MarkovState(str, 0), 1));
-            else this.probabilityMap.put(str + "0", new MarkovInput(new MarkovState(str, 0), 0));
+            if(a == chars[0]){
+                double numerator = 1 + this.k;
+                double denominator = 1 + (2 * this.k);
+                this.probabilityMap.put(str + "0", new MarkovInput(new MarkovState(str, 0), numerator/denominator));
+            }
+            else{
+                double numerator = 0 + this.k;
+                double denominator = 1 + (2 * this.k);
+                this.probabilityMap.put(str + "0", new MarkovInput(new MarkovState(str, 0), numerator/denominator));
+            }
         }
         double result = 0;
         for(String base : this.states){
             for(String given : this.states){
-                System.out.print(base+given+" ");
-                result = ((double) (computeNumerator(this.sequence, given+base))) / computeDenominator(this.sequence,given);
+                result = ((double) (computeNumerator(this.sequence, given+base) + this.k)) / (computeDenominator(this.sequence,given) + (2 * this.k));
                 this.probabilityMap.put(base+"|"+given, new MarkovInput(new MarkovState(base, -1), new MarkovState(given, -1), result));
     
             }
@@ -101,11 +109,10 @@ public class Markov{
         }
         double numerator = this.probabilityMap.get(mi.getGiven().getVariable() + "|" + mi.getBase().getVariable()).getValue() * computeStateProbability(new MarkovState(mi.getBase().getVariable(), mi.getBase().getSubscript()));
         double denominator = this.computeStateProbability(new MarkovState(mi.getGiven().getVariable(), mi.getGiven().getSubscript()));
-        if(probabilityMap.containsKey(mi.getBase().getVariable() + mi.getBase().getSubscript())){
-            System.out.println("existing");
-        } else {
+        // if(probabilityMap.containsKey(mi.getBase().getVariable() + mi.getBase().getSubscript())){
+        // } else {
 
-        }
+        // }
         this.probabilityMap.put(mi.getBase().getVariable() + mi.getBase().getSubscript() + "|" + mi.getGiven().getVariable() + mi.getGiven().getSubscript(), new MarkovInput(new MarkovState(mi.getBase().getVariable(), mi.getBase().getSubscript()), new MarkovState(mi.getGiven().getVariable(), mi.getGiven().getSubscript()), numerator/denominator));
         return numerator / denominator;
     }
@@ -114,6 +121,7 @@ public class Markov{
             FileReader fr = new FileReader(inputFilename);
             BufferedReader br = new BufferedReader(fr);
             String line;
+            this.k = Integer.parseInt(br.readLine());
             this.states = br.readLine().split(" ");
             this.measurableStates = br.readLine().split(" ");
             for(int i = 0; i < states.length; i++){
@@ -123,7 +131,6 @@ public class Markov{
                 }
             }
             this.sequence = br.readLine();
-            System.out.println(sequence);
             int count = Integer.parseInt(br.readLine());
             this.inputs = new MarkovInput[count];
             computeTransitionProbabilities();
@@ -158,9 +165,9 @@ public class Markov{
         try{
             FileWriter fw = new FileWriter("hmm.out");
             for(MarkovInput mi : this.inputs){
-                fw.write(mi.getBase().getVariable() + mi.getBase().getSubscript() 
+                fw.write("P(" + mi.getBase().getVariable() + mi.getBase().getSubscript() 
                     + " given " 
-                    + mi.getGiven().getVariable() + mi.getGiven().getSubscript() 
+                    + mi.getGiven().getVariable() + mi.getGiven().getSubscript() + ")"
                     + " = " + mi.getValue() + "\n");
             }
             fw.close();

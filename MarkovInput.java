@@ -28,5 +28,8 @@ public class MarkovInput{
         if(this.given != null) System.out.println(this.base.getVariable() + this.base.getSubscript()+ "|" + this.given.getVariable() + this.given.getSubscript() + " = " + this.value);
         else System.out.println(this.base.getVariable() + this.base.getSubscript() + " = " + this.value);
     }
+    public void setValue(double value){
+        this.value = value;
+    }
 
 }
